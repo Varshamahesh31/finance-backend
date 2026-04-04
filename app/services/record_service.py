@@ -3,23 +3,27 @@ from sqlalchemy import extract
 from .. import models, schemas
 from typing import Optional
 
-def get_records(db: Session, record_type: Optional[str] = None, category: Optional[str] = None, date_str: Optional[str] = None):
+def get_records(
+    db: Session, 
+    record_type: Optional[str] = None, 
+    category: Optional[str] = None, 
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    skip: int = 0,
+    limit: int = 10
+):
     query = db.query(models.Record)
     
     if record_type:
         query = query.filter(models.Record.type == record_type)
     if category:
         query = query.filter(models.Record.category == category)
-    if date_str:
-        # Assuming date_str is "YYYY-MM"
-        try:
-            year, month = map(int, date_str.split("-"))
-            query = query.filter(extract('year', models.Record.date) == year)
-            query = query.filter(extract('month', models.Record.date) == month)
-        except ValueError:
-            pass # Invalid format, ignore or handle differently. We assume valid format here as per requirements.
-            
-    return query.all()
+    if start_date:
+        query = query.filter(models.Record.date >= start_date)
+    if end_date:
+        query = query.filter(models.Record.date <= end_date)
+        
+    return query.offset(skip).limit(limit).all()
 
 def create_record(db: Session, record: schemas.RecordCreate):
     db_record = models.Record(**record.dict())

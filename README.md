@@ -1,44 +1,106 @@
 # Finance Data Processing and Access Control Backend
 
-A clean and modular FastAPI backend for a finance dashboard showing API design, database modeling, role-based access control, and financial data processing.
+## Project Overview
+The Finance Data Processing and Access Control Backend is a robust, modular, and production-ready API designed to securely manage financial records and compute dynamic dashboard analytics while enforcing seamless, role-based access control.
 
 ## Tech Stack
-- Python 3
-- FastAPI
-- SQLAlchemy
-- SQLite
-- Pydantic
+*   **Language:** Python 3
+*   **Web Framework:** FastAPI
+*   **Database ORM:** SQLAlchemy
+*   **Database:** SQLite
+*   **Validation Validation:** Pydantic
 
-## Getting Started
+## Setup Instructions
 
-1. Create a virtual environment (optional but recommended):
-   ```bash
-   python -m venv venv
-   source venv/bin/activate
-   ```
+Ensure you have Python installed on your system (Python 3.9+ recommended).
 
-2. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
+1.  **Clone the repository locally.**
+2.  **Initialize a virtual environment:**
+    ```bash
+    python3 -m venv venv
+    source venv/bin/activate  # macOS / Linux
+    # .\venv\Scripts\activate # Windows
+    ```
+3.  **Install dependencies:**
+    ```bash
+    pip install -r requirements.txt
+    ```
 
-3. Run the application:
-   ```bash
-   uvicorn app.main:app --reload
-   ```
+## Running the Server
 
-4. View documentation:
-   Open `http://localhost:8000/docs` to see the Swagger interactive documentation.
+To start the FastAPI development server, use Uvicorn configured for module watching:
+```bash
+uvicorn app.main:app --reload
+```
+The server will now be listening by default on `http://localhost:8000`.
 
-## Access Control Implementation
+*   **API Root:** `http://localhost:8000/`
+*   **Live Swagger Docs:** `http://localhost:8000/docs`
 
-Since there was no JWT or session-based authentication required, a mock RBAC is simulated via a Header `X-User-Id`. 
+> **Note:** Upon the server starting, the `lifespan` event automatically ensures that a default Admin user (`admin@test.com`) is injected into the database if one does not exist.
 
-- **Admin**: Can create/update/delete any records and users.
-- **Analyst**: Can view records and summaries.
-- **Viewer**: Can view records and summaries.
+## API Endpoints Overview
 
-To test as a user:
-1. Create a user with `admin` role by hitting `POST /users` (no header required to create the first user, but the endpoint `POST /users` checks for admin. Wait, to bootstrap an admin, you can manually insert into the sqlite DB or modify the `POST /users` temporarily. To make it simpler, the provided implementation actually enforces `require_admin` on `POST /users`. You might need to seed an admin or remove the dependency temporarily for the first user). Let's say we seed via python terminal directly.
+*   **`/users`**
+    *   `POST /users/`: Create User (Admin Only)
+    *   `GET /users/`: Get All Users (Admin Only)
+*   **`/records`**
+    *   `POST /records/`: Create a Record (Admin Only)
+    *   `GET /records/`: Fetch/Filter Records (Supports `start_date`, `end_date`, `type`, `category`, and pagination with `page`/`limit`) (Viewer or higher)
+    *   `GET /records/{record_id}`: Read single record (Viewer or higher)
+    *   `PUT /records/{record_id}`: Update specific record (Admin Only)
+    *   `DELETE /records/{record_id}`: Destroy specific record (Admin Only)
+*   **`/summary`**
+    *   `GET /summary/income`: Total logged income
+    *   `GET /summary/expense`: Total logged expense
+    *   `GET /summary/balance`: Real-time net balance
+    *   `GET /summary/category`: Value distributions grouped by category 
+    *   `GET /summary/recent`: The 10 most recent chronological records
+    *   `GET /summary/monthly`: Income/Expense trends isolated historically by month.
 
-Alternatively, you could bypass checking for the very first user in a real scenario.
+*(Check the Live Swagger Docs for detailed schemas, inputs, and response bodies.)*
+
+## Role Based Access Control (RBAC)
+
+The system leverages FastAPI `Depends` components to verify headers and handle authorization layers fluidly. Since we are circumventing typical token integrations (like JWT) for simpler logic, we are relying on an HTTP request Header labeled `X-User-Id`. 
+
+The system implements strict permission cascades:
+*   **Viewer:** Can only read analytic summaries and lookup existing records.
+*   **Analyst:** Operates identically to the Viewer role.
+*   **Admin:** Has complete execution coverage over system features; the sole entity able to add, modify, or drop records and users.
+
+## Example Request Headers
+
+Injecting the User ID manually implies mocking the logged-in user state. The Application provides a bootstrapped default Admin assigned typically to ID `1`. 
+
+To run an Admin operation (like creating a record):
+```http
+X-User-Id: 1
+```
+
+## Example API Usage
+
+**Creating a new record using Curl:**
+```bash
+curl -X 'POST' \
+  'http://localhost:8000/records/' \
+  -H 'accept: application/json' \
+  -H 'X-User-Id: 1' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "amount": 250.50,
+  "type": "expense",
+  "category": "Software Subscriptions",
+  "date": "2026-04-15",
+  "notes": "Annual Cloud Hosting Bill",
+  "user_id": 1
+}'
+```
+
+**Fetching records with filters:**
+```bash
+curl -X 'GET' \
+  'http://localhost:8000/records/?type=expense&start_date=2026-04-01&end_date=2026-04-30&page=1&limit=5' \
+  -H 'accept: application/json' \
+  -H 'X-User-Id: 1'
+```

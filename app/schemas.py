@@ -10,7 +10,15 @@ class UserBase(BaseModel):
     status: StatusEnum = StatusEnum.active
 
 class UserCreate(UserBase):
-    pass
+    class Config:
+        schema_extra = {
+            "example": {
+                "name": "Jane Doe",
+                "email": "jane.doe@example.com",
+                "role": "viewer",
+                "status": "active"
+            }
+        }
 
 class User(UserBase):
     id: int
@@ -18,21 +26,42 @@ class User(UserBase):
     class Config:
         orm_mode = True
         from_attributes = True
+        schema_extra = {
+            "example": {
+                "id": 1,
+                "name": "Jane Doe",
+                "email": "jane.doe@example.com",
+                "role": "viewer",
+                "status": "active"
+            }
+        }
 
 class RecordBase(BaseModel):
     amount: float = Field(..., gt=0, description="Amount must be strictly positive")
     type: TypeEnum
-    category: str
+    category: str = Field(..., min_length=1, description="Category cannot be empty")
     date: date
     notes: Optional[str] = None
 
 class RecordCreate(RecordBase):
     user_id: int
+    
+    class Config:
+        schema_extra = {
+            "example": {
+                "amount": 250.50,
+                "type": "expense",
+                "category": "Food",
+                "date": "2026-04-10",
+                "notes": "Lunch bill",
+                "user_id": 1
+            }
+        }
 
 class RecordUpdate(BaseModel):
     amount: Optional[float] = Field(None, gt=0)
     type: Optional[TypeEnum] = None
-    category: Optional[str] = None
+    category: Optional[str] = Field(None, min_length=1)
     date: Optional[date] = None
     notes: Optional[str] = None
 
@@ -43,6 +72,17 @@ class Record(RecordBase):
     class Config:
         orm_mode = True
         from_attributes = True
+        schema_extra = {
+            "example": {
+                "id": 100,
+                "amount": 250.50,
+                "type": "expense",
+                "category": "Food",
+                "date": "2026-04-10",
+                "notes": "Lunch bill",
+                "user_id": 1
+            }
+        }
 
 class SummaryCategory(BaseModel):
     category: str
