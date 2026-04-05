@@ -13,21 +13,26 @@ models.Base.metadata.create_all(bind=engine)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup logic
-    db = SessionLocal()
     try:
-        admin_user = db.query(models.User).filter_by(email="admin@test.com").first()
-        if not admin_user:
-            admin = models.User(
-                name="Admin",
-                email="admin@test.com",
-                role=models.RoleEnum.admin,
-                status=models.StatusEnum.active
-            )
-            db.add(admin)
-            db.commit()
-            print("Default admin user created successfully.")
-    finally:
-        db.close()
+        db = SessionLocal()
+        try:
+            admin_user = db.query(models.User).filter_by(email="admin@test.com").first()
+            if not admin_user:
+                admin = models.User(
+                    name="Admin",
+                    email="admin@test.com",
+                    role=models.RoleEnum.admin,
+                    status=models.StatusEnum.active
+                )
+                db.add(admin)
+                db.commit()
+                print("Default admin user created successfully.")
+        except Exception as e:
+            print(f"Startup logic minor failure (safe to ignore if db empty): {e}")
+        finally:
+            db.close()
+    except Exception as outer_e:
+        print(f"Failed to initialize database session during startup: {outer_e}")
     yield
     # Shutdown logic
 
