@@ -68,4 +68,4 @@ The application is pre-configured and securely deployable on standard cloud cont
 ## Live API Documentation
 You can seamlessly interface with the real-time deployed API directly through the live, interactive Swagger Documentation!
 
-🔗 **[Live API Playground: https://finance-backend-production-065a.up.railway.app/docs](https://finance-backend-production-065a.up.railway.app/docs)**
+🔗 **[Live API Playground: https://finance-backend-production-065a.up.railway.app/docs](https://finance-backend-production-0ef3.up.railway.app/docs)**
