@@ -92,3 +92,18 @@ class SummaryMonthly(BaseModel):
     month: str
     income: float
     expense: float
+
+from typing import Generic, TypeVar, Any
+
+T = TypeVar('T')
+
+class APIResponse(BaseModel, Generic[T]):
+    status: str = "success"
+    message: str = "Operation completed"
+    data: T
+
+class PaginatedResponse(BaseModel, Generic[T]):
+    page: int
+    limit: int
+    total: int
+    records: List[T]

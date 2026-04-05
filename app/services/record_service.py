@@ -1,19 +1,30 @@
 from sqlalchemy.orm import Session
-from sqlalchemy import extract
+from sqlalchemy import extract, or_
 from .. import models, schemas
-from typing import Optional
+from typing import Optional, Tuple, List
+from datetime import date
 
 def get_records(
     db: Session, 
     record_type: Optional[str] = None, 
     category: Optional[str] = None, 
-    start_date: Optional[str] = None,
-    end_date: Optional[str] = None,
-    skip: int = 0,
+    start_date: Optional[date] = None,
+    end_date: Optional[date] = None,
+    search: Optional[str] = None,
+    page: int = 1,
     limit: int = 10
-):
+) -> Tuple[int, List[models.Record]]:
     query = db.query(models.Record)
     
+    if search:
+        search_filter = f"%{search}%"
+        query = query.filter(
+            or_(
+                models.Record.category.ilike(search_filter),
+                models.Record.notes.ilike(search_filter)
+            )
+        )
+        
     if record_type:
         query = query.filter(models.Record.type == record_type)
     if category:
@@ -23,7 +34,10 @@ def get_records(
     if end_date:
         query = query.filter(models.Record.date <= end_date)
         
-    return query.offset(skip).limit(limit).all()
+    total = query.count()
+    skip = (page - 1) * limit
+    records = query.offset(skip).limit(limit).all()
+    return total, records
 
 def create_record(db: Session, record: schemas.RecordCreate):
     db_record = models.Record(**record.dict())

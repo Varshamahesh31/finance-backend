@@ -39,6 +39,14 @@ app = FastAPI(
 # Add Middleware
 app.add_middleware(LoggingMiddleware)
 
+# Initialize slowapi limiter explicitly
+from .limiter import limiter
+from slowapi.errors import RateLimitExceeded
+from slowapi import _rate_limit_exceeded_handler
+
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
 # Custom Exception Handler to force 422 into 400 for strict bad formatted requests
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):

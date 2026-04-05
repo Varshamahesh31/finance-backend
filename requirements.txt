@@ -3,3 +3,6 @@ uvicorn
 sqlalchemy
 pydantic
 email-validator
+slowapi
+pytest
+httpx
